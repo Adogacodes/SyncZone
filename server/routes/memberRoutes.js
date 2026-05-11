@@ -12,10 +12,10 @@ const router = express.Router()
 
 router.use(protect)
 
-router.get('/',      getMembers)
-router.post('/',     createMember)
-router.post('/seed', seedMembers)
-router.put('/:id',   updateMember)
+router.get('/',       getMembers)
+router.post('/',      createMember)
+router.post('/seed',  seedMembers)
+router.put('/:id',    updateMember)
 router.delete('/:id', deleteMember)
 
 export default router

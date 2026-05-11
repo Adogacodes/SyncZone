@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useApp } from '../context/AppContext'
+import { useNavigate } from 'react-router-dom'
 import {
   getInitials,
   avatarStyle,
@@ -20,11 +21,12 @@ function hourLabel(h) {
 }
 
 export default function Timeline() {
-  const { members, setActivePage, setMeetingTime } = useApp()
+  const { members, setMeetingTime } = useApp()
   const [nowPct, setNowPct]         = useState(0)
   const [tooltip, setTooltip]       = useState(null)
   const [bestSlots, setBestSlots]   = useState([])
   const blocksRef                   = useRef(null)
+  const navigate = useNavigate()
 
   // Recompute current time percentage every second
   useEffect(() => {
@@ -49,15 +51,18 @@ export default function Timeline() {
   }
 
   function handleBlockHover(member, utcHour, e) {
-    const rect = e.currentTarget.closest('.timeline-blocks-wrap').getBoundingClientRect()
-    setTooltip({
-      member,
-      utcHour,
-      localTime: utcHourToLocal(utcHour, member.timezone),
-      type:      getBlockType(member, utcHour),
-      x:         e.clientX - rect.left,
-    })
-  }
+  const wrap = e.currentTarget.closest('.timeline-blocks-wrap')
+  const rect = wrap.getBoundingClientRect()
+  const xPct = ((e.clientX - rect.left) / rect.width) * 100
+
+  setTooltip({
+    member,
+    utcHour,
+    localTime: utcHourToLocal(utcHour, member.timezone),
+    type:      getBlockType(member, utcHour),
+    x:         Math.min(xPct, 75),
+  })
+}
 
   const best = bestSlots[0]
 
@@ -92,10 +97,10 @@ export default function Timeline() {
           <button
   className="btn btn-primary btn-sm"
   onClick={() => {
-    const h = String(best.utcHour).padStart(2, '0')
-    setMeetingTime(`${h}:00`)
-    setActivePage('meeting')
-  }}
+  const h = String(best.utcHour).padStart(2, '0')
+  setMeetingTime(`${h}:00`)
+  navigate('/meeting')
+}}
 >
   Schedule this →
 </button>
@@ -144,7 +149,7 @@ export default function Timeline() {
             <div style={{ position: 'relative' }} ref={blocksRef}>
               {members.map((member, mi) => (
                 <motion.div
-                  key={member.id}
+                  key={member._id}
                   className="timeline-row"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -186,22 +191,22 @@ export default function Timeline() {
                     )}
 
                     {/* Tooltip */}
-                    {tooltip?.member.id === member.id && (
-                      <div
-                        className="block-tooltip"
-                        style={{ left: `${Math.min(tooltip.x, 85)}%` }}
-                      >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                          {tooltip.localTime}
-                        </span>
-                        <span className={`badge badge-${
-                          tooltip.type === 'work' ? 'success' :
-                          tooltip.type === 'overlap' ? 'warning' : 'danger'
-                        }`} style={{ fontSize: '10px', padding: '1px 6px' }}>
-                          {tooltip.type === 'work' ? 'Working' : tooltip.type === 'overlap' ? 'Overlap' : 'Off'}
-                        </span>
-                      </div>
-                    )}
+                    {tooltip?.member._id === member._id && (
+  <div
+    className="block-tooltip"
+    style={{ left: `${Math.min(tooltip.x ?? 0, 85)}%` }}
+  >
+    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+      {tooltip.localTime}
+    </span>
+    <span className={`badge badge-${
+      tooltip.type === 'work'    ? 'success' :
+      tooltip.type === 'overlap' ? 'warning' : 'danger'
+    }`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+      {tooltip.type === 'work' ? 'Working' : tooltip.type === 'overlap' ? 'Overlap' : 'Off'}
+    </span>
+  </div>
+)}
                   </div>
                 </motion.div>
               ))}

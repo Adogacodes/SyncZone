@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { useApp } from '../../context/AppContext'
+import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 
-export default function AppLayout({ children, activePage, onNavigate }) {
+export default function AppLayout({ activePage, onNavigate, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="app-layout">
 
-      {/* Mobile overlay */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? 'overlay-show' : ''}`}
         onClick={() => setSidebarOpen(false)}
@@ -28,6 +27,7 @@ export default function AppLayout({ children, activePage, onNavigate }) {
           onMobileMenuOpen={() => setSidebarOpen(true)}
         />
         <main className="page-content">
+          <Outlet />
           {children}
         </main>
       </div>

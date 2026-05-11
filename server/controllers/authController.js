@@ -1,3 +1,4 @@
+import bcrypt        from 'bcryptjs'
 import User          from '../models/User.js'
 import generateToken from '../utils/generateToken.js'
 
@@ -5,7 +6,12 @@ import generateToken from '../utils/generateToken.js'
 // @route   POST /api/auth/register
 // @access  Public
 export async function register(req, res) {
-  const { name, email, password, timezone, colorIndex } = req.body
+  const { name, email, password, timezone, colorIndex, isDemo } = req.body
+
+  if (!name || !email || !password) {
+    res.status(400)
+    throw new Error('Please provide name, email and password')
+  }
 
   const exists = await User.findOne({ email })
   if (exists) {
@@ -13,15 +19,19 @@ export async function register(req, res) {
     throw new Error('An account with that email already exists')
   }
 
+  const salt           = await bcrypt.genSalt(10)
+  const hashedPassword = await bcrypt.hash(password, salt)
+
   const user = await User.create({
     name,
     email,
-    password,
+    password:   hashedPassword,
     timezone:   timezone   ?? 'UTC',
     colorIndex: colorIndex ?? 0,
+    isDemo:     isDemo     ?? false,
   })
 
-  generateToken(res, user._id)
+  const token = generateToken(res, user._id)
 
   res.status(201).json({
     _id:        user._id,
@@ -29,6 +39,8 @@ export async function register(req, res) {
     email:      user.email,
     timezone:   user.timezone,
     colorIndex: user.colorIndex,
+    isDemo:     user.isDemo,
+    token
   })
 }
 
@@ -38,13 +50,24 @@ export async function register(req, res) {
 export async function login(req, res) {
   const { email, password } = req.body
 
+  if (!email || !password) {
+    res.status(400)
+    throw new Error('Please provide email and password')
+  }
+
   const user = await User.findOne({ email }).select('+password')
-  if (!user || !(await user.matchPassword(password))) {
+  if (!user) {
     res.status(401)
     throw new Error('Invalid email or password')
   }
 
-  generateToken(res, user._id)
+  const isMatch = await bcrypt.compare(password, user.password)
+  if (!isMatch) {
+    res.status(401)
+    throw new Error('Invalid email or password')
+  }
+
+  const token = generateToken(res, user._id)
 
   res.json({
     _id:        user._id,
@@ -52,6 +75,8 @@ export async function login(req, res) {
     email:      user.email,
     timezone:   user.timezone,
     colorIndex: user.colorIndex,
+    isDemo:     user.isDemo,
+    token
   })
 }
 
@@ -77,6 +102,7 @@ export async function getMe(req, res) {
     email:      user.email,
     timezone:   user.timezone,
     colorIndex: user.colorIndex,
+    isDemo:     user.isDemo,
   })
 }
 
@@ -92,7 +118,8 @@ export async function updateProfile(req, res) {
   user.colorIndex = req.body.colorIndex ?? user.colorIndex
 
   if (req.body.password) {
-    user.password = req.body.password
+    const salt    = await bcrypt.genSalt(10)
+    user.password = await bcrypt.hash(req.body.password, salt)
   }
 
   const updated = await user.save()

@@ -1,121 +1,63 @@
-import { createContext, useContext, useEffect, useReducer, useState } from 'react'
-import { DEFAULT_MEMBERS, MOCK_ACCOUNTS } from '../data/mockData'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+} from 'react'
+import {
+  loginUser,
+  logoutUser,
+  registerUser,
+  getMe,
+} from '../utils/authApi'
+import {
+  fetchMembers,
+  createMember,
+  updateMember,
+  deleteMember,
+  seedMembers,
+} from '../utils/membersApi'
 import { getTodayString } from '../utils/helpers'
 
-// ── CONSTANTS ─────────────────────────────────────────────
-
-const STORAGE_KEY_MEMBERS = 'synczone_members'
-const STORAGE_KEY_THEME   = 'synczone_theme'
-
-// ── REDUCER ───────────────────────────────────────────────
-
-// All member-related state changes flow through here.
-// A reducer is just a function: (currentState, action) => newState
-// Using a reducer instead of multiple useState calls keeps
-// related logic in one place and makes changes predictable.
+const STORAGE_KEY_THEME = 'synczone_theme'
 
 function membersReducer(state, action) {
-
-  
   switch (action.type) {
-
-    case 'LOAD':
-      return action.payload
-
-    case 'ADD':
-      return [
-        ...state,
-        { ...action.payload, id: Date.now() },
-      ]
-
-    case 'UPDATE':
-      return state.map(m =>
-        m.id === action.payload.id ? { ...m, ...action.payload } : m
-      )
-
-    case 'DELETE':
-      return state.filter(m => m.id !== action.payload)
-
-    default:
-      return state
+    case 'LOAD':   return action.payload
+    case 'ADD':    return [...state, action.payload]
+    case 'UPDATE': return state.map(m => m._id === action.payload._id ? action.payload : m)
+    case 'DELETE': return state.filter(m => m._id !== action.payload)
+    default:       return state
   }
 }
 
-// ── CONTEXT ───────────────────────────────────────────────
-
 const AppContext = createContext(null)
-
-// ── PROVIDER ──────────────────────────────────────────────
 
 export function AppProvider({ children }) {
 
-  // ── Auth state
-  const [currentUser, setCurrentUser] = useState(null)
-  const [isLoggedIn,  setIsLoggedIn]  = useState(false)
-
-  // ── Theme state
-  const [theme, setTheme] = useState('dark')
-
-  // Add this with the other state declarations (around line 20)
-const [activePage, setActivePage] = useState('dashboard')
-
-  // ── Members state — managed by reducer
-  const [members, dispatch] = useReducer(membersReducer, [])
-
-  // ── Meeting scheduler state
-  const [meetingDate, setMeetingDate] = useState(getTodayString())
-  const [meetingTime, setMeetingTime] = useState('14:00')
-  const [meetingName, setMeetingName] = useState('Team Standup')
-
-  // ── Modal state
-  const [memberModal, setMemberModal] = useState({ open: false, member: null })
+  const [currentUser,    setCurrentUser]    = useState(null)
+  const [isLoggedIn,     setIsLoggedIn]     = useState(false)
+  const [authLoading,    setAuthLoading]    = useState(true)
+  const [theme,          setTheme]          = useState('dark')
+  const [activePage,     setActivePage]     = useState('dashboard')
+  const [members,        dispatch]          = useReducer(membersReducer, [])
+  const [membersLoading, setMembersLoading] = useState(false)
+  const [meetingDate,    setMeetingDate]    = useState(getTodayString())
+  const [meetingTime,    setMeetingTime]    = useState('14:00')
+  const [meetingName,    setMeetingName]    = useState('Team Standup')
+  const [memberModal,    setMemberModal]    = useState({ open: false, member: null })
 
 
-  // ── EFFECTS ───────────────────────────────────────────────
+  // ── THEME ───────────────────────────────────────────────
 
-  // On mount: load persisted members and theme from localStorage
   useEffect(() => {
-    const savedMembers = localStorage.getItem(STORAGE_KEY_MEMBERS)
-    const savedTheme   = localStorage.getItem(STORAGE_KEY_THEME)
-
-    dispatch({
-      type: 'LOAD',
-      payload: savedMembers ? JSON.parse(savedMembers) : DEFAULT_MEMBERS,
-    })
-
-    if (savedTheme) {
-      setTheme(savedTheme)
-      document.documentElement.classList.toggle('theme-light', savedTheme === 'light')
+    const saved = localStorage.getItem(STORAGE_KEY_THEME)
+    if (saved) {
+      setTheme(saved)
+      document.documentElement.classList.toggle('theme-light', saved === 'light')
     }
   }, [])
-
-  // Whenever members change, persist them
-  useEffect(() => {
-    if (members.length > 0) {
-      localStorage.setItem(STORAGE_KEY_MEMBERS, JSON.stringify(members))
-    }
-  }, [members])
-
-
-  // ── AUTH ACTIONS ──────────────────────────────────────────
-
-  function login(user) {
-    setCurrentUser(user)
-    setIsLoggedIn(true)
-  }
-
-  function loginWithEmail(email) {
-    const found = MOCK_ACCOUNTS.find(u => u.email === email)
-    login(found ?? MOCK_ACCOUNTS[0])
-  }
-
-  function logout() {
-    setCurrentUser(null)
-    setIsLoggedIn(false)
-  }
-
-
-  // ── THEME ACTIONS ─────────────────────────────────────────
 
   function toggleTheme() {
     const next = theme === 'dark' ? 'light' : 'dark'
@@ -125,71 +67,161 @@ const [activePage, setActivePage] = useState('dashboard')
   }
 
 
-  // ── MEMBER ACTIONS ────────────────────────────────────────
+  // ── LOAD MEMBERS HELPER ──────────────────────────────────
 
-  function addMember(data) {
-    dispatch({ type: 'ADD', payload: data })
+  async function loadMembers() {
+    setMembersLoading(true)
+    try {
+      const data = await fetchMembers()
+      dispatch({ type: 'LOAD', payload: data })
+    } catch (err) {
+      console.error('Failed to load members:', err)
+    } finally {
+      setMembersLoading(false)
+    }
   }
 
-  function updateMember(data) {
-    dispatch({ type: 'UPDATE', payload: data })
+
+  // ── SESSION CHECK ON MOUNT ───────────────────────────────
+
+  useEffect(() => {
+  let cancelled = false
+
+  async function checkSession() {
+    const token = localStorage.getItem('synczone_token')
+    if (!token) {
+      setAuthLoading(false)
+      return
+    }
+    try {
+      const user = await getMe()
+      if (cancelled) return
+      setCurrentUser(user)
+      setIsLoggedIn(true)
+      const data = await fetchMembers()
+      if (cancelled) return
+      dispatch({ type: 'LOAD', payload: data })
+    } catch {
+      if (cancelled) return
+      localStorage.removeItem('synczone_token')
+      setCurrentUser(null)
+      setIsLoggedIn(false)
+    } finally {
+      if (!cancelled) setAuthLoading(false)
+    }
   }
 
-  function deleteMember(id) {
+  checkSession()
+  return () => { cancelled = true }
+}, [])
+
+
+  // ── AUTH ────────────────────────────────────────────────
+
+async function login(email, password) {
+  const user = await loginUser({ email, password })
+  if (user.token) localStorage.setItem('synczone_token', user.token)
+  setCurrentUser(user)
+  setIsLoggedIn(true)
+
+  const data = await fetchMembers()
+  if (data.length === 0 && user.isDemo) {
+    try {
+      await seedMembers()
+      const seeded = await fetchMembers()
+      dispatch({ type: 'LOAD', payload: seeded })
+    } catch {
+      dispatch({ type: 'LOAD', payload: data })
+    }
+  } else {
+    dispatch({ type: 'LOAD', payload: data })
+  }
+}
+
+  async function register(name, email, password, timezone, colorIndex, isDemo = false) {
+  const user = await registerUser({ name, email, password, timezone, colorIndex, isDemo })
+  if (user.token) localStorage.setItem('synczone_token', user.token)
+  setCurrentUser(user)
+  setIsLoggedIn(true)
+
+  if (isDemo) {
+    try {
+      await seedMembers()
+    } catch {
+      // already seeded
+    }
+  }
+
+  const data = await fetchMembers()
+  dispatch({ type: 'LOAD', payload: data })
+}
+
+  async function logout() {
+  try { await logoutUser() } catch { /* ignore */ }
+  localStorage.removeItem('synczone_token')
+  setCurrentUser(null)
+  setIsLoggedIn(false)
+  dispatch({ type: 'LOAD', payload: [] })
+  setActivePage('dashboard')
+  setAuthLoading(false)
+}
+
+
+  // ── MEMBERS ─────────────────────────────────────────────
+
+  async function addMember(data) {
+    const member = await createMember(data)
+    dispatch({ type: 'ADD', payload: member })
+  }
+
+  async function editMember(data) {
+    const updated = await updateMember(data._id, data)
+    dispatch({ type: 'UPDATE', payload: updated })
+  }
+
+  async function removeMember(id) {
+    await deleteMember(id)
     dispatch({ type: 'DELETE', payload: id })
   }
 
 
-  // ── MODAL HELPERS ─────────────────────────────────────────
+  // ── MODAL ───────────────────────────────────────────────
 
-  function openAddModal() {
-    setMemberModal({ open: true, member: null })
-  }
-
-  function openEditModal(member) {
-    setMemberModal({ open: true, member })
-  }
-
-  function closeModal() {
-    setMemberModal({ open: false, member: null })
-  }
+  function openAddModal()        { setMemberModal({ open: true, member: null })  }
+  function openEditModal(member) { setMemberModal({ open: true, member })        }
+  function closeModal()          { setMemberModal({ open: false, member: null }) }
 
 
-  // ── CONTEXT VALUE ─────────────────────────────────────────
-  // Everything we expose to the rest of the app
+  // ── VALUE ───────────────────────────────────────────────
 
   const value = {
-    // auth
     currentUser,
     isLoggedIn,
+    authLoading,
     login,
-    loginWithEmail,
+    register,
     logout,
 
-    // theme
     theme,
     toggleTheme,
 
-    // members
-    members,
-    addMember,
-    updateMember,
-    deleteMember,
+    activePage,
+    setActivePage,
 
-    // meeting
+    members,
+    membersLoading,
+    addMember,
+    updateMember: editMember,
+    deleteMember: removeMember,
+
     meetingDate, setMeetingDate,
     meetingTime, setMeetingTime,
     meetingName, setMeetingName,
 
-    // modal
     memberModal,
     openAddModal,
     openEditModal,
     closeModal,
-
-    // Inside the value = { ... } object
-activePage,
-setActivePage,
   }
 
   return (
@@ -198,12 +230,6 @@ setActivePage,
     </AppContext.Provider>
   )
 }
-
-// ── HOOK ──────────────────────────────────────────────────
-
-// Custom hook so any component can do:
-// const { members, addMember } = useApp()
-// instead of importing both useContext and AppContext everywhere
 
 export function useApp() {
   const ctx = useContext(AppContext)

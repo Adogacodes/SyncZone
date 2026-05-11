@@ -2,7 +2,16 @@ import jwt  from 'jsonwebtoken'
 import User from '../models/User.js'
 
 export async function protect(req, res, next) {
-  const token = req.cookies.synczone_token
+  let token
+
+  // Check Authorization header first
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1]
+  }
+  // Fall back to cookie
+  else if (req.cookies.synczone_token) {
+    token = req.cookies.synczone_token
+  }
 
   if (!token) {
     res.status(401)

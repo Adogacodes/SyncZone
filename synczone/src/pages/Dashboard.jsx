@@ -141,7 +141,7 @@ export default function Dashboard() {
       ) : (
         <div className="grid-auto">
           {members.map((member, i) => (
-            <MemberCard key={member.id} member={member} index={i} />
+            <MemberCard key={member._id} member={member} index={i} />
           ))}
         </div>
       )}

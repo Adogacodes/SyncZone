@@ -15,10 +15,10 @@ export default function Team() {
   const toast = useToast()
 
   function handleDelete(member) {
-    if (!confirm(`Remove ${member.name} from the team?`)) return
-    deleteMember(member.id)
-    toast(`${member.name} removed`, 'error')
-  }
+  if (!confirm(`Remove ${member.name} from the team?`)) return
+  deleteMember(member._id)
+  toast(`${member.name} removed`, 'error')
+}
 
   return (
     <div className="page-enter">
@@ -52,7 +52,7 @@ export default function Team() {
           <tbody>
             {members.map((member, i) => (
               <motion.tr
-                key={member.id}
+                key={member._id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: i * 0.04 }}

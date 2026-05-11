@@ -24,14 +24,21 @@ export default function MemberModal() {
 
   // Populate form when editing
   useEffect(() => {
-    if (memberModal.open) {
-      setForm(memberModal.member
-        ? { ...memberModal.member }
-        : { ...EMPTY_FORM }
-      )
-      setErrors({})
-    }
-  }, [memberModal])
+  if (memberModal.open) {
+    setForm(memberModal.member
+      ? {
+          name:       memberModal.member.name,
+          role:       memberModal.member.role,
+          timezone:   memberModal.member.timezone,
+          workStart:  memberModal.member.workStart,
+          workEnd:    memberModal.member.workEnd,
+          colorIndex: memberModal.member.colorIndex,
+        }
+      : { ...EMPTY_FORM }
+    )
+    setErrors({})
+  }
+}, [memberModal])
 
   function set(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -46,19 +53,19 @@ export default function MemberModal() {
     return e
   }
 
-  function handleSave() {
-    const e = validate()
-    if (Object.keys(e).length) { setErrors(e); return }
+ function handleSave() {
+  const e = validate()
+  if (Object.keys(e).length) { setErrors(e); return }
 
-    if (isEditing) {
-      updateMember(form)
-      toast('Member updated successfully')
-    } else {
-      addMember(form)
-      toast('Member added to team')
-    }
-    closeModal()
+  if (isEditing) {
+    updateMember({ ...form, _id: memberModal.member._id })
+    toast('Member updated successfully')
+  } else {
+    addMember(form)
+    toast('Member added to team')
   }
+  closeModal()
+}
 
   const preview = avatarStyle(form.colorIndex)
 
