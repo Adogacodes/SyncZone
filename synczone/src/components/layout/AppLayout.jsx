@@ -18,6 +18,7 @@ export default function AppLayout({ activePage, onNavigate, children }) {
         activePage={activePage}
         onNavigate={onNavigate}
         onClose={() => setSidebarOpen(false)}
+        isOpen={sidebarOpen}
       />
 
       <div className="main-content">

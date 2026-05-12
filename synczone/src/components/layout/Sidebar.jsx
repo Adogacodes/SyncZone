@@ -76,11 +76,11 @@ const NAV_ITEMS = [
 },
 ]
 
-export default function Sidebar({ activePage, onNavigate, onClose }) {
+export default function Sidebar({ activePage, onNavigate, onClose, isOpen }) {
   const { currentUser, members, toggleTheme, logout, theme } = useApp()
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
 
       {/* Logo */}
       <div className="sidebar-logo">
