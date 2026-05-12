@@ -5,6 +5,7 @@ const PAGE_META = {
   timeline:  { title: 'Timeline',         sub: '24-hour overlap grid'                  },
   meeting:   { title: 'Schedule Meeting', sub: 'Find the best time for everyone'        },
   team:      { title: 'Team Members',     sub: 'Manage your remote team'               },
+  settings:  { title: 'Settings',         sub: 'Manage your account and preferences'   }
 }
 
 export default function Topbar({ activePage, onNavigate, onMobileMenuOpen }) {

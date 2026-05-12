@@ -947,6 +947,7 @@ a:hover { color: var(--info); }
   flex-shrink: 0;
   overflow: hidden;
   z-index: 30;
+  transition: transform var(--dur-slow) var(--ease-out);
 }
 
 .sidebar::after {
@@ -2128,3 +2129,252 @@ a:hover { color: var(--info); }
 }
 
 .password-toggle:hover { color: var(--text-primary); }
+
+/* ── SETTINGS ─────────────────────────────────────────────── */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.settings-panel {
+  padding: 22px;
+}
+
+.settings-panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 18px;
+}
+
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 20px;
+}
+
+.settings-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.settings-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-info-row:last-child { border-bottom: none; }
+
+.settings-info-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.settings-info-value {
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-all;
+}
+
+.settings-danger-panel {
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── FULL RESPONSIVE PASS ─────────────────────────────────── */
+
+/* Tablet — 900px and below */
+@media (max-width: 900px) {
+  .meeting-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile — 768px and below */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 14px;
+  }
+
+  .dashboard-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard-heading .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .grid-stat {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .grid-auto {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+  }
+
+  .member-time-display {
+    font-size: 1.5rem;
+  }
+
+  .topbar-actions .btn-ghost {
+    display: none;
+  }
+
+  .timeline-member-cell {
+    width: 120px;
+    padding: 6px 8px;
+  }
+
+  .timeline-hour-row {
+    padding-left: 120px;
+  }
+
+  .timeline-member-cell .name {
+    font-size: 10px;
+  }
+
+  .timeline-member-cell .tz {
+    font-size: 8px;
+  }
+
+  .best-slot-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .best-slot-banner .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .overlap-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 92vh;
+  }
+
+  .working-hours-row {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .meeting-results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .meeting-results-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .copy-preview {
+    word-break: break-all;
+  }
+
+  .settings-avatar-row {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .settings-pref-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .settings-pref-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Small mobile — 480px and below */
+@media (max-width: 480px) {
+  .grid-stat {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-auto {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+  }
+
+  .overlap-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .login-box {
+    padding: 20px;
+  }
+
+  .login-logo-name {
+    font-size: 22px;
+  }
+
+  .member-card {
+    padding: 14px;
+  }
+
+  .data-table thead th:nth-child(4),
+  .data-table tbody td:nth-child(4) {
+    display: none;
+  }
+}

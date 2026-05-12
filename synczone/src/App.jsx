@@ -9,6 +9,7 @@ import Timeline from './pages/Timeline'
 import Meeting from './pages/Meeting'
 import MemberModal from './components/team/MemberModal'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import Settings from './pages/Settings'
 
 function LoadingScreen() {
   return (
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="timeline"  element={<Timeline />} />
         <Route path="meeting"   element={<Meeting />} />
         <Route path="team"      element={<Team />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

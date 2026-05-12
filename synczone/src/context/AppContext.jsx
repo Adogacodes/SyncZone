@@ -196,6 +196,7 @@ async function login(email, password) {
 
   const value = {
     currentUser,
+    setCurrentUser,
     isLoggedIn,
     authLoading,
     login,
